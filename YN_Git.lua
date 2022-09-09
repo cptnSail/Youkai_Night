@@ -69,7 +69,7 @@ function start_music()
 end
 
 function gameover_music()
-	music(-1, 500)
+	music(-1, 550)
 	music(0)
 end
 
