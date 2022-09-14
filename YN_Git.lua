@@ -17,8 +17,9 @@ function _init()
 	y = 112
 	spd = 2.0
 	
-	xb = x+4
+	xb = 64
 	yb = y-10
+	br = 3
 	sbx = rnd({-1, 1})
 	sby = -1
 	
@@ -26,7 +27,7 @@ function _init()
 	plr_spr_1 = 3
 	plr_spr_2 = 19
 	
-	ball_spr = 23 --0
+	ball_spr = 39 --0
 	
 	menu_x_spr = 68
 	
@@ -163,30 +164,25 @@ end
 
 function update_ball()
 	animate_ball()
-
-	xb += sbx
-	yb += sby
-	
 	--particles
 	spawntrail(xb, yb, 0)
+
+	local bxn, byn
+	
+	bxn = xb+sbx
+	byn = yb+sby
 	
 	--wall check
-	if (xb < 0) then
-		xb = 0
+	if (bxn-br < 0 or
+					bxn+br > 127) then
 		sbx = -sbx
 	end
 	
-	if (xb > 120) then
-		xb = 120
-		sbx = -sbx
-	end
-	
-	if (yb < 9) then
-		yb = 9
+	if (byn-br < 6) then
 		sby = -sby
 	end
 	
-	if (yb > 128) then	
+	if (byn+br > 128) then	
 		shake += 0.2
 	
 		gameover = true
@@ -194,15 +190,16 @@ function update_ball()
 	
 	
 	-- player check
- if (yb+4==y and xb+8>=x and xb<=x+16) then
+ if hit_ballbox(bxn, byn, x, y, 16, 16) then
 		sby = -sby
-		enemy_move()
 		
-		if (xb+8>=x and xb+8<=x+8) then
+		if (byn == y) then enemy_move() end
+		
+		if (bxn+br>=x and bxn+br<=x+8) then
 			if (sbx > 0) sbx = -sbx 
 		end
 		
-		if (xb>=x+9 and xb<=x+16) then
+		if (bxn-br>=x+9 and bxn-br<=x+16) then
 			if (sbx < 0) sbx = -sbx
 		end
 		
@@ -210,9 +207,11 @@ function update_ball()
 	end
 	
 	
-	-- enemy check
+	-- enemy check 
 	foreach(bricks, brick_attacked)
 	
+	xb = bxn
+	yb = byn
 	
 end
 
@@ -423,7 +422,7 @@ function draw_end()
 end
 
 function draw_ball()
-	spr(ball_spr, xb, yb)
+	spr(ball_spr, xb-br, yb-br)
 end
 
 function draw_plr()
@@ -495,6 +494,8 @@ function create_brick(x, y)
 	brick.x = x
 	brick.y = y	
 	brick.spr = rnd({7,8,9,10})
+	brick.wh = 8
+	
 	add (bricks, brick)
 end
 
@@ -990,5 +991,82 @@ function rm_draw()
 end
 
 
+--collisions
+
+function hit_ballbox(xb,yb,tx,ty,tw,th)
+	if xb+br < tx then return false end
+	if yb+br < ty then return false end
+	if xb-br > tx+tw then return false end
+	if yb-br > ty+th then return false end
+	return true
+   end
+   
+   function deflx_ballbox(bx,by,bdx,bdy,tx,ty,tw,th)
+	-- calculate wether to deflect the ball
+	-- horizontally or vertically when it hits a box
+	if bdx == 0 then
+	 -- moving vertically
+	 return false
+	elseif bdy == 0 then
+	 -- moving horizontally
+	 return true
+	else
+	 -- moving diagonally
+	 -- calculate slope
+	 local slp = bdy / bdx
+	 local cx, cy
+	 -- check variants
+	 if slp > 0 and bdx > 0 then
+	  -- moving down right
+	  debug1="q1"
+	  cx = tx-bx
+	  cy = ty-by
+	  if cx<=0 then
+	   return false
+	  elseif cy/cx < slp then
+	   return true
+	  else
+	   return false
+	  end
+	 elseif slp < 0 and bdx > 0 then
+	  debug1="q2"
+	  -- moving up right
+	  cx = tx-bx
+	  cy = ty+th-by
+	  if cx<=0 then
+	   return false
+	  elseif cy/cx < slp then
+	   return false
+	  else
+	   return true
+	  end
+	 elseif slp > 0 and bdx < 0 then
+	  debug1="q3"
+	  -- moving left up
+	  cx = tx+tw-bx
+	  cy = ty+th-by
+	  if cx>=0 then
+	   return false
+	  elseif cy/cx > slp then
+	   return false
+	  else
+	   return true
+	  end
+	 else
+	  -- moving left down
+	  debug1="q4"
+	  cx = tx+tw-bx
+	  cy = ty-by
+	  if cx>=0 then
+	   return false
+	  elseif cy/cx < slp then
+	   return false
+	  else
+	   return true
+	  end
+	 end
+	end
+	return false
+   end
 
 
