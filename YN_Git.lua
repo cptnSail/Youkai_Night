@@ -15,6 +15,7 @@ function _init()
 
 	x = 56
 	y = 112
+	plr_w = 16
 	spd = 2.0
 	
 	xb = 64
@@ -175,10 +176,12 @@ function update_ball()
 	--wall check
 	if (bxn-br < 0 or
 					bxn+br > 127) then
+		bxn = mid(0, bxn, 125)
 		sbx = -sbx
 	end
 	
-	if (byn-br < 6) then
+	if (byn-br < 10) then
+		byn = mid(10, byn, 127)
 		sby = -sby
 	end
 	
@@ -190,17 +193,32 @@ function update_ball()
 	
 	
 	-- player check
- if hit_ballbox(bxn, byn, x, y, 16, 16) then
-		sby = -sby
+ if hit_ballbox(bxn, byn, x, y, 16, 4) then
+		local position
 		
-		if (byn == y) then enemy_move() end
-		
-		if (bxn+br>=x and bxn+br<=x+8) then
-			if (sbx > 0) sbx = -sbx 
-		end
-		
-		if (bxn-br>=x+9 and bxn-br<=x+16) then
-			if (sbx < 0) sbx = -sbx
+		if deflx_ballbox(xb,yb,sbx,sby,x,y,16,4) then
+			if sbx > 0 then
+				bxn = mid(0,bxn,x-4)
+			else
+				bxn = mid(x+plr_w+4,bxn,127)
+			end
+			
+			sbx = -sbx
+			
+		else	
+			if sby > 0 and byn < y then
+				byn = mid(10,byn,y-3)
+			else
+				byn = mid(y+7,byn,127)
+			end
+			
+			if bxn+br < plr_w/2+x and
+						sbx > 0 then	sbx = -sbx end
+			
+			if bxn+br > plr_w/2+x and
+						sbx < 0 then sbx = -sbx end
+					
+			sby = -sby
 		end
 		
  	sound()
@@ -208,7 +226,32 @@ function update_ball()
 	
 	
 	-- enemy check 
-	foreach(bricks, brick_attacked)
+	if (byn+br == y) then enemy_move() end
+	
+	for yk in all(bricks) do
+		if hit_ballbox(bxn, byn, yk.x, yk.y, 8, 8) then
+			local str_sh = 0.08
+			
+			local position
+			
+			if deflx_ballbox(xb,yb,sbx,sby,yk.x,yk.y,7,7) then
+				sbx = -sbx
+			else
+				sby = -sby
+			end
+			
+			shake += str_sh
+					
+			brick_crush(yk)
+			sfx(3)
+		
+			incrase_score()
+			 	
+			if yk.y+8 > y then gameover = true end
+		end
+	end
+	
+	
 	
 	xb = bxn
 	yb = byn
@@ -507,82 +550,6 @@ function draw_brick(b)
 	spr(b.spr, b.x, b.y)
 end
 
-function brick_attacked(b)
-	local str_sh = 0.08
-	local rng = 7.1
-
-	if (abs(b.x-xb)<rng and 
-					yb+1 == b.y+8) then
-		youkai_death(b)
-					
-		shake += str_sh
-					
-		sby = -sby
-		brick_crush(b)
-		sfx(3)
-		
-		incrase_score()
-	end
-		
-	if (abs(b.x-xb)<rng and 
-	    yb+6 == b.y-1) then	 
-	 youkai_death(b)
-	 
-	 shake += str_sh
-	  
-	 sby = -sby  
-	 brick_crush(b)
-	 sfx(3)
-
-		incrase_score()
-	end
-		
-	if (abs(b.y-yb)<rng and 
-					xb+1 == b.x+8) then		
-		youkai_death(b)
-		
-		shake += str_sh
-					
-		sbx = -sbx
-		brick_crush(b)
-		sfx(3)
-		
-		incrase_score()
-	end
-		
-	if (abs(b.y-yb)<rng and 
-					xb+6 == b.x-1) then	
-		youkai_death(b)
-		
-		shake += str_sh
-		
-				sbx = -sbx				
-		brick_crush(b)
-		sfx(3)
-		
-		incrase_score()
-	end
-	
-	if(b.y+6 >= 112) then 
-		youkai_death(b)
-		
-		shake += str_sh
-	
-		gameover = true
-	end
-end
-
-function incrase_score()
-	score += 10*(enem_count - count(bricks))
-	
-	youkai += enem_count - count(bricks)
-	
-	enem_count = count(bricks)
-	
-	if (enem_count == 0) then
-		score += 100
-	end
-end
 
 function brick_crush(b)
 	del(bricks, b)
