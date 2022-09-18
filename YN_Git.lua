@@ -7,7 +7,13 @@ function _init()
 	gameover = false
 	--high score
 	hs = {}
+	hs1 = {}
+	hs2 = {}
+	hs3 = {}
+	def_lb()
 	loadhs()
+	hschars={"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
+	--hs[1] = 1000
 	
 	rest_wait = 0
 	ng_wait = 0
@@ -23,7 +29,7 @@ function _init()
 	x = 56
 	y = 112
 	plr_w = 16
-	spd = 2.0
+	spd = 0
 	
 	xb = 64
 	yb = y-10
@@ -89,19 +95,31 @@ function _update60()
 	if (menu == 0 and
 					gameover == false) then
 					
+		btnpress = false
+					
 		animate_plr()
 		
 		--playeraura(x, y+5)
 				
 		if(start_wait > 60) then
 			if (btn(0)) then
-				x -= spd
-				if (x < 0) x = 0
+				spd = -2
+				btnpress = true
 			end
 			
 			if (btn(1)) then
-				x += spd
-				if (x > 112) x = 112
+				spd = 2
+				btnpress = true
+			end
+			
+			if not(btnpress) then
+				spd = spd/2
+			end
+			
+			x += spd
+			
+			if (x < 0 or x+plr_w > 128) then
+				x = mid(0, x, 112)
 			end
 				
 			if cntbl == 0 then
@@ -112,10 +130,10 @@ function _update60()
 				sby = -1
 			end
 				
-			new_enemy()
-			
 			update_spellcard()
-			
+				
+			new_enemy()
+					
 		else
 			--animate_cast()
 			updatecast()
@@ -148,7 +166,15 @@ function _update60()
 		
 		rm_anim()
 		
-		if(btn(5)) menu = 2 
+		if(btn(5)) then 
+			ng_wait +=1
+		
+			if (ng_wait > 7) then
+			 menu = 2
+			 ng_wait = 0
+			end
+		end 
+		if(btn(4)) menu = 3
 		
 	elseif(menu == 2) then
 		for _p in all(partc) do
@@ -166,7 +192,17 @@ function _update60()
 		if(btn(5)) then 
 			ng_wait +=1
 		
-			if (ng_wait > 6) menu = 0
+			if (ng_wait > 8) menu = 0
+		end
+	elseif (menu == 3) then
+		animate_btn()
+		if (btn(5)) then
+			ng_wait+=1
+		
+			if ng_wait > 8 then
+		 	menu = 1
+		 	ng_wait = 0
+		 end
 		end
 	end
 end
@@ -237,10 +273,10 @@ function update_ball()
 	if (byn+br == y) then enemy_move() end
 	
 	for yk in all(bricks) do
-		if hit_ballbox(bxn, byn, yk.x, yk.y, 8, 8) then
-			local str_sh = 0.08
+		--base ball hits
+		if hit_ballbox(bxn, byn, yk.x, yk.y, 7, 7) then
 			
-			local position
+			local str_sh = 0.08
 			
 			if deflx_ballbox(xb,yb,sbx,sby,yk.x,yk.y,7,7) then
 				sbx = -sbx
@@ -249,18 +285,18 @@ function update_ball()
 			end
 			
 			shake += str_sh
-					
+				
+			youkai_death(yk)
+				
 			brick_crush(yk)
 			sfx(3)
-		
-			incrase_score()
-			 	
-			if yk.y+8 > y then gameover = true end
+			incrase_score()		 	
 		end
+		
+		if yk.y+8 > y then gameover = true end
 	end
 	
-	
-	
+
 	xb = bxn
 	yb = byn
 	
@@ -359,6 +395,11 @@ function _draw()
 		cls()
 	
 		draw_dialog()
+	
+	elseif (menu == 3) then
+		cls()
+	
+		draw_lb()
 		
 	else
 		cls(1)
@@ -379,6 +420,8 @@ function _draw()
 		drawparts()
 		
 		draw_spellcard()
+		
+		print("d: "..debug, 2, 120, 7)
 	
 		if (gameover == true) then 		
 			draw_end()
@@ -398,18 +441,21 @@ function draw_topbar()
 end
 
 function draw_menu()
-	spr(64, 48, 36)
-	spr(65, 56, 36)
-	spr(80, 48, 44)
-	spr(81, 56, 44)
+	spr(64, 48, 28)
+	spr(65, 56, 28)
+	spr(80, 48, 36)
+	spr(81, 56, 36)
 	
-	spr(66, 64, 36)
-	spr(67, 72, 36)
-	spr(82, 64, 44)
-	spr(83, 72, 44)
+	spr(66, 64, 28)
+	spr(67, 72, 28)
+	spr(82, 64, 36)
+	spr(83, 72, 36)
 	
-	print('press    to start!', 28, 65, 6)
-	spr(menu_x_spr, 52, 63)	
+	print('press    to start!', 28, 57, 6)
+	spr(menu_x_spr, 52, 55)
+		
+	print('press    to leaderboard!', 16, 68, 6)
+	spr(menu_z_spr, 40, 66)
 	
 	
 	rectfill(0, 100, 128, 128, 1)
@@ -467,14 +513,13 @@ function draw_end()
 	rect(-1, 39, 129, 65, 7)
 	
 	print('your shrine was destroyed...', 8, 42, 7)
-	print ('restart', 50, 54, 7)
 	
-	if (btn(5)) then
-		rectfill(49, 53, 77, 59, 7)
-		rectfill(48, 54, 78, 58, 7)
+	rectfill(49, 53, 77, 59, 7)
+	rectfill(48, 54, 78, 58, 7)
 	
-		print ('restart', 50, 54, 1)
-	end
+	print ('restart', 50, 54, 8)
+	
+	if (btn(5)) then print ('restart', 50, 54, 7) end
 end
 
 function draw_ball()
@@ -563,10 +608,25 @@ function draw_brick(b)
 	spr(b.spr, b.x, b.y)
 end
 
+function incrase_score()
+	score += 10*(enem_count - count(bricks))
+	
+	youkai += enem_count - count(bricks)
+	
+	enem_count = count(bricks)
+	
+	if (enem_count == 0) then
+		score += 100
+	end
+end
 
 function brick_crush(b)
 	del(bricks, b)
 end
+
+
+
+
 
 
 --visual effects!
@@ -754,7 +814,7 @@ function update_spellcard()
 		end
 	end
 
-	if(spellcard_active == true) use_spellcard()
+	if(spellcard_active) use_spellcard()
 end
 
 
@@ -767,7 +827,7 @@ function use_spellcard()
 	
 	--wall check
 	for adb in all(add_balls) do
-		spawntrail(adb.x-3, adb.y-3, 1)
+		spawntrail(adb.x, adb.y, 1)
 	
 		adb.life += 1
 	
@@ -775,30 +835,43 @@ function use_spellcard()
 		adb.y += adb.spdy
 		
 		--wall check
-		if (adb.x-3 < 0) then
-			adb.x = 3
+		if (adb.x-br < 0 or
+					adb.x+br > 127) then
+			adb.x = mid(0, adb.x, 125)
 			adb.spdx = -adb.spdx
 		end
-		
-		if (adb.x+3 > 128) then
-			adb.x = 125
-			adb.spdx = -adb.spdx
-		end
-		
-		if (adb.y-3 < 9) then
-			adb.y = 12
+	
+		if (adb.y-br < 10 or
+					adb.y+br > 127) then
+			adb.y = mid(10, adb.y, 127)
 			adb.spdy = -adb.spdy
 		end
-		
-		if (adb.y+3 > 128) then
-			adb.y = 125
-			adb.spdy = -adb.spdy
-		end
-		
-		--enemy check
-		spellcard_attack(adb)
 		
 		if (adb.life > adb.maxlife) del(add_balls, adb)
+	end
+	
+	--enemy check
+	for yk in all(bricks) do
+		for _adb in all(add_balls) do		
+			if hit_ballbox(_adb.x+_adb.spdx, _adb.y+_adb.spdy, yk.x, yk.y, 7, 7) then
+				
+				local str_sh = 0.06
+				
+				if deflx_ballbox(_adb.x,_adb.y,_adb.spdx,_adb.spdy,yk.x,yk.y,7,7) then
+					_adb.spdx = -_adb.spdx
+				else
+					_adb.spdy = -_adb.spdy
+				end
+				
+				shake += str_sh
+					
+				youkai_death(yk)
+					
+				brick_crush(yk)
+				sfx(3)
+				incrase_score()
+			end
+		end
 	end
 		
 	if (count(add_balls) == 0) then
@@ -808,72 +881,10 @@ function use_spellcard()
 	end
 end
 
-function spellcard_attack(adbl)
-	local yk
-
-	for yk in all(bricks) do	
-		local rng = 11
-	
-		if (adbl.y-3 == yk.y+8 and
-						abs(yk.x - adbl.x) < rng) then
-			youkai_death(yk)
-			
-			shake += 0.01
-			
-			adbl.spdy = -adbl.spdy
-			brick_crush(yk)
-			sfx(3)
-			
-			incrase_score()
-		end
-			
-		if (adbl.y+3 == yk.y-1 and		
-						abs(yk.x - adbl.x) < rng) then
-			youkai_death(yk)
-			
-			shake = 0.01
-			
-			adbl.spdy = -adbl.spdy
-			brick_crush(yk)
-			sfx(3)
-		
-			incrase_score()
-		end
-			
-		if (adbl.x-3 == yk.x+8 and
-						abs(yk.y - adbl.y) < rng) then
-			youkai_death(yk)
-			
-			shake = 0.01
-
-			
-			adbl.spdx = -adbl.spdx
-			brick_crush(yk)
-			sfx(3)
-			
-			incrase_score()
-		end
-			
-		if (adbl.x+3 == yk.x and
-						abs(yk.y - adbl.y) < rng) then
-			youkai_death(yk)
-			
-			shake = 0.1
-			
-			adbl.spdx = -adbl.spdx
-			brick_crush(yk)
-			sfx(3)
-			
-			incrase_score()
-		end
-	end
-end
-
-
 function add_ball_cast()
 	local addbl = {}
-	addbl.x = xb+4
-	addbl.y = yb+4
+	addbl.x = xb
+	addbl.y = yb
 	
 	addbl.spdx = rnd({- 2, 2})
 	addbl.spdy = rnd({- 2, 2})
@@ -929,6 +940,8 @@ function draw_spell_bar()
 		end
 	end	
 end
+
+
 
 
 --animation
@@ -1052,9 +1065,12 @@ function hit_ballbox(xb,yb,tx,ty,tw,th)
 
 --leaderboard
 
-function def_hsl()
+function def_lb()
 	--default leaderboard
 	hs={500, 400, 300, 200, 100}
+	hs1={26,26,26,26,26}
+	hs2={21,21,21,21,21}
+	hs3={14,14,14,14,14}
 	savehs()
 end
 
@@ -1065,23 +1081,58 @@ function loadhs()
 		_slot+=1
 		for i= 1, 5 do
 			hs[i] = dget(_slot)
-			_slot+=1
+			hs1[i] = dget(_slot+1)
+			hs2[i] = dget(_slot+2)
+			hs3[i] = dget(_slot+3)
+			_slot+=4
 		end
 	else 
 		--file is empty
-		def_hsl()
+		def_lb()
 	end
 end
  
 function savehs()
 	local _slot
-	dset(0, 1 )
+	dset(0, 1)
 	
 	_slot=1
 	for i= 1, 5 do
 		dset(_slot, hs[i])
-		_slot+=1
+		dset(_slot+1, hs1[i])
+		dset(_slot+2, hs2[i])
+		dset(_slot+3, hs3[i])
+		_slot+=4
 	end
 end
+
+function draw_lb()
+	rectfill(0,0,128,8,8)
+	line(0,8,128,8,7)
+	
+	print("✽  leaderboard  ✽",28,2,7)
+	
+	print('press    to back!', 30, 110, 6)
+	spr(menu_x_spr, 54, 108)
+	
+	printlb() 
+end
+
+
+function printlb()
+	for i = 1, 5 do
+		--tier
+		print(i.." - ", 10, 10+8*i, 7)
+		--name
+		local _name = hschars[hs1[i]]..hschars[hs2[i]]..hschars[hs3[i]]
+		print(_name, 26, 10+8*i)		
+		--score
+		local _score = " "..hs[i]
+		print(_score, 110-#_score*4, 10+8*i)
+	end
+end
+
+
+
 
 
