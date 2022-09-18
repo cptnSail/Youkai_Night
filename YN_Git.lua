@@ -1,6 +1,13 @@
+cartdata("leaderboard")
+
 function _init()
+	debug = ""
+
 	menu = 1
 	gameover = false
+	--high score
+	hs = {}
+	loadhs()
 	
 	rest_wait = 0
 	ng_wait = 0
@@ -31,6 +38,7 @@ function _init()
 	ball_spr = 39 --0
 	
 	menu_x_spr = 68
+	menu_z_spr = 70
 	
 	x_splcd_spr = 84
 	
@@ -134,7 +142,7 @@ function _update60()
 		end
 		
 	elseif(menu == 1) then
-		animate_x_btn()
+		animate_btn()
 		
 		sakura_partc()
 		
@@ -153,7 +161,7 @@ function _update60()
 			ng_wait += 1
 		end
 	
-		animate_x_btn()
+		animate_btn()
 	
 		if(btn(5)) then 
 			ng_wait +=1
@@ -282,14 +290,19 @@ function sound()
 	sfx(1)
 end
 
-function animate_x_btn()
+function animate_btn()
 	if (time() - ball_anim_time > .2) then
 		menu_x_spr += 1
+		menu_z_spr += 1
 		
 		ball_anim_time = time()
 
 		if (menu_x_spr > 69) then
 			menu_x_spr = 68
+		end
+		
+		if (menu_z_spr > 71) then
+			menu_z_spr = 70
 		end
 	end
 end
@@ -1035,5 +1048,40 @@ function hit_ballbox(xb,yb,tx,ty,tw,th)
 	end
 	return false
    end
+
+
+--leaderboard
+
+function def_hsl()
+	--default leaderboard
+	hs={500, 400, 300, 200, 100}
+	savehs()
+end
+
+function loadhs()
+	local _slot=0 
+	
+	if dget(0) == 1 then
+		_slot+=1
+		for i= 1, 5 do
+			hs[i] = dget(_slot)
+			_slot+=1
+		end
+	else 
+		--file is empty
+		def_hsl()
+	end
+end
+ 
+function savehs()
+	local _slot
+	dset(0, 1 )
+	
+	_slot=1
+	for i= 1, 5 do
+		dset(_slot, hs[i])
+		_slot+=1
+	end
+end
 
 
