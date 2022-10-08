@@ -1,8 +1,6 @@
 cartdata("leaderboard")
 
 function _init()
-	debug = ""
-
 	menu = 1
 	gameover = false
 	--high score
@@ -10,12 +8,27 @@ function _init()
 	hs1 = {}
 	hs2 = {}
 	hs3 = {}
-	def_lb()
+	--def_lb()
 	loadhs()
+	--addhs(10, 1, 1, 1)
 	hschars={"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
+	
+	--debug = #hs
+	
+	newname = {1,1,1}
+	_char = 1
+	switch_wait = 7
+	
+	char_cnt = 1
+	ch_clr = 7
+	blink_wait = 30
 	--hs[1] = 1000
 	
-	rest_wait = 0
+	--switch button in game over
+	rest_main = "restart"
+	rest_main_wait = 5
+	
+	rest_wait = 6
 	ng_wait = 0
 	start_wait = 0
 	sakura_wait = 0
@@ -144,19 +157,43 @@ function _update60()
 		start_wait += 1
 
 	elseif (gameover == true) then		
+		blink()
+		addnewscore()
 		
-		if (rest_wait == 0) then
+		if rest_wait == 6 then
 			gameover_music()
-			rest_wait += 1
+			rest_wait -= 1
 		end
 		
-		if (btn(5)) then
+		if score < hs[5] or char_cnt > 3 then
+			if btn(0) or btn(1) then rest_main_wait -= 1 end
+			if rest_main_wait < 0 then rest_main_wait = 5 end
 			
-			rest_wait += 2
+			if btn(1) and
+						rest_main_wait == 0 then
+				rest_main = "main"
+				sfx(8)
+			end
+		
+			if btn(0) and
+						rest_main_wait == 0 then
+				rest_main = "restart"
+				sfx(8)
+			end
+		
+			if btn(5) then rest_wait -= 1 end
 			
-			start(rest_wait)	
-			
-			start_music()
+			if btn(5) and rest_wait < 0 then
+				if rest_main == "restart" then
+					start()	
+					start_music()
+				end
+				if rest_main == "main" then
+					main()	
+					main_music()
+				end
+				
+			end
 		end
 		
 	elseif(menu == 1) then
@@ -302,12 +339,14 @@ function update_ball()
 	
 end
 
-function start(wait)
-	if (wait > 5) then
-		_init()
-		
-		menu = 0
-	end
+function start()
+	_init()
+	menu = 0
+end
+
+function main()
+	_init()
+	menu = 1
 end
 
 function enemy_move()
@@ -390,6 +429,8 @@ function _draw()
 		
 		draw_menu()
 		drawparts()
+		
+--		print("d: "..debug, 2, 120, 7)
 				
 	elseif (menu == 2) then
 		cls()
@@ -421,11 +462,17 @@ function _draw()
 		
 		draw_spellcard()
 		
-		print("d: "..debug, 2, 120, 7)
+--		print("d: "..debug, 2, 120, 7)
 	
 		if (gameover == true) then 		
-			draw_end()
+			
+			if score >= hs[5] then
+				draw_newscore()
+			else
+				draw_end()
+			end
 		end
+		
 	end
 end
 
@@ -454,8 +501,8 @@ function draw_menu()
 	print('press    to start!', 28, 57, 6)
 	spr(menu_x_spr, 52, 55)
 		
-	print('press    to leaderboard!', 16, 68, 6)
-	spr(menu_z_spr, 40, 66)
+	print('press    for leaderboard!', 14, 68, 6)
+	spr(menu_z_spr, 38, 66)
 	
 	
 	rectfill(0, 100, 128, 128, 1)
@@ -514,12 +561,77 @@ function draw_end()
 	
 	print('your shrine was destroyed...', 8, 42, 7)
 	
-	rectfill(49, 53, 77, 59, 7)
-	rectfill(48, 54, 78, 58, 7)
+	--restart button
+	if rest_main == "restart" then
+		rectfill(14, 53, 42, 59, 7)
+		rectfill(13, 54, 43, 58, 7)
+		if not(btn(5)) then
+			print ('restart', 15, 54, 8)
+		end
+	--	rectfill(76, 53, 113, 59, 7)
+	--	rectfill(75, 54, 114, 58, 7)
+		print ('main menu', 77, 54, 7)
+	end
 	
-	print ('restart', 50, 54, 8)
+	--main menu botton
+	if rest_main == "main" then
+	--	rectfill(14, 53, 42, 59, 7)
+	--	rectfill(13, 54, 43, 58, 7)
+		print ('restart', 15, 54, 7)
+		
+		rectfill(76, 53, 113, 59, 7)
+		rectfill(75, 54, 114, 58, 7)
+		if not(btn(5)) then
+			print ('main menu', 77, 54, 8)
+		end
+	end
+end
+
+
+function draw_newscore()
+	rectfill(0, 30, 128, 96, 8)
+	rect(-1, 29, 129, 97, 7)
+	line(-1, 39, 129, 39, 7)
 	
-	if (btn(5)) then print ('restart', 50, 54, 7) end
+	print('your shrine was destroyed...', 8, 32, 7)
+	
+	if char_cnt <= 3 then
+		rectfill(33, 42, 93, 48, 7)
+		rectfill(32, 43, 94, 47, 7)
+		print('enter your name', 34, 43, 8)
+	
+		print('use ⬆️⬇️ and ⬅️➡️', 30, 64, 6)
+		print('press x to confirm', 28, 72, 6)
+	else
+		print('enter your name', 34, 43, 7)		
+	end
+	drawname()
+	
+	--restart button
+	if rest_main == "restart" then
+		if char_cnt > 3 then
+			rectfill(14, 85, 42, 91, 7)
+			rectfill(13, 86, 43, 90, 7)
+			if not(btn(5)) then
+				print ('restart', 15, 86, 8)
+			end
+		else
+			print ('restart', 15, 86, 7)			
+		end
+		
+		print ('main menu', 77, 86, 7)
+	end
+	
+	--main menu botton
+	if rest_main == "main" then
+		print ('restart', 15, 86, 7)
+		
+		rectfill(76, 85, 112, 91, 7)
+		rectfill(75, 86, 113, 90, 7)
+		if not(btn(5)) then
+			print ('main menu', 77, 86, 8)
+		end
+	end
 end
 
 function draw_ball()
@@ -623,6 +735,10 @@ end
 function brick_crush(b)
 	del(bricks, b)
 end
+
+
+
+
 
 
 
@@ -1065,9 +1181,35 @@ function hit_ballbox(xb,yb,tx,ty,tw,th)
 
 --leaderboard
 
+
+--add a new high score
+function addhs(_score, _c1, _c2, _c3)
+	add(hs, _score)
+	add(hs1, _c1)
+	add(hs2, _c2)
+	add(hs3, _c3)
+	sortlb()
+	savehs()
+end
+
+--sort leaderboard
+function sortlb()
+	for i = 1, #hs do
+		local j = i
+		while j > 1 and hs[j-1] < hs[j] do
+			hs[j],hs[j-1] = hs[j-1], hs[j]
+			hs1[j],hs1[j-1] = hs1[j-1], hs1[j]
+			hs2[j],hs2[j-1] = hs2[j-1], hs2[j]
+			hs3[j],hs3[j-1] = hs3[j-1], hs3[j]
+			j = j-1
+		end
+	end
+end
+
+
 function def_lb()
 	--default leaderboard
-	hs={500, 400, 300, 200, 100}
+	hs={1000, 600, 400, 200, 100}
 	hs1={26,26,26,26,26}
 	hs2={21,21,21,21,21}
 	hs3={14,14,14,14,14}
@@ -1086,6 +1228,7 @@ function loadhs()
 			hs3[i] = dget(_slot+3)
 			_slot+=4
 		end
+		sortlb()
 	else 
 		--file is empty
 		def_lb()
@@ -1129,6 +1272,87 @@ function printlb()
 		--score
 		local _score = " "..hs[i]
 		print(_score, 110-#_score*4, 10+8*i)
+	end
+end
+
+function addnewscore()
+	entername()
+	if char_cnt == 4 then
+		addhs(score, newname[1], newname[2], newname[3])
+		char_cnt += 1
+	end
+end
+
+function entername()
+	if char_cnt <= 3 then
+		enterchar(char_cnt)
+		
+		if switch_wait == 0 and	btn(0) then
+			if char_cnt > 1 then char_cnt-=1 end
+			_char = 1
+		end
+		
+		if switch_wait == 0 and	btn(1) then
+			if char_cnt < 3 then char_cnt+=1 end
+			_char = 1
+		end
+		
+		if switch_wait == 0 and	btn(5) then
+			char_cnt = 4
+			_char = 1
+		end
+	end
+end
+
+function enterchar(_cnt)
+	newname[_cnt] = _char
+	
+	if btn(3) or btn(2) or btn(5) or btn(0) or btn(1) then
+	 switch_wait -= 1 
+	end
+	if switch_wait < 0 then switch_wait = 7 end
+	
+	if switch_wait == 0 and
+			 btn(3) and
+			 _char > 1 then 
+		_char -= 1
+		sfx(8)
+	end
+	
+	if switch_wait == 0 and
+			 btn(2) and
+			 _char < 26 then 
+		_char += 1
+		sfx(8)
+	end
+end
+
+function drawname()
+	line(57, 60, 59, 60, 7)
+	line(62, 60, 64, 60, 7)
+	line(67, 60, 69, 60, 7)
+	
+	local _clr1 = ch_clr 
+	local _clr2 = ch_clr 
+	local _clr3 = ch_clr
+	
+	if char_cnt > 1 then _clr1 = 7 end
+	if char_cnt > 2 then _clr2 = 7 end
+	if char_cnt > 3 then _clr3 = 7 end
+		
+	print(hschars[newname[1]], 57, 54, _clr1)
+	print(hschars[newname[2]], 62, 54, _clr2)
+	print(hschars[newname[3]], 67, 54, _clr3)
+end
+
+function blink()
+	blink_wait -= 1
+	
+	if blink_wait<20 then ch_clr = 6 end
+	if blink_wait<10 then ch_clr = 10 end
+	if blink_wait<0 then
+		ch_clr = 7
+		blink_wait = 30
 	end
 end
 
