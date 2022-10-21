@@ -1,6 +1,7 @@
 cartdata("leaderboard")
 
 function _init()
+	--menu mode
 	menu = 1
 	gameover = false
 	--high score
@@ -10,11 +11,12 @@ function _init()
 	hs3 = {}
 	--def_lb()
 	loadhs()
-	--addhs(10, 1, 1, 1)
+	--chars for name in leaderboard
 	hschars={"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"}
 	
 	--debug = #hs
 	
+	--name input staff
 	newname = {1,1,1}
 	_char = 1
 	switch_wait = 7
@@ -33,17 +35,20 @@ function _init()
 	start_wait = 0
 	sakura_wait = 0
 	
+	--topbar
 	score = 0
 	youkai = 0
 	energy_lvl = 0
 	
 	--enem_count = 0
 
+	--player
 	x = 56
 	y = 112
 	plr_w = 16
 	spd = 0
 	
+	--ball
 	xb = 64
 	yb = y-10
 	br = 3
@@ -70,6 +75,7 @@ function _init()
 	ball_anim_time = 0
 	ball_anim_wait = .05
 	
+	--youkai array
 	bricks = {}
 	
 	--spellcard
@@ -104,7 +110,9 @@ end
 
 function _update60()
 	updateparts()
+	blink()
 
+	--game mode
 	if (menu == 0 and
 					gameover == false) then
 					
@@ -156,8 +164,8 @@ function _update60()
 		
 		start_wait += 1
 
+	--gameover mode
 	elseif (gameover == true) then		
-		blink()
 		addnewscore()
 		
 		if rest_wait == 6 then
@@ -195,7 +203,8 @@ function _update60()
 				
 			end
 		end
-		
+
+	--main menu
 	elseif(menu == 1) then
 		animate_btn()
 		
@@ -212,7 +221,8 @@ function _update60()
 			end
 		end 
 		if(btn(4)) menu = 3
-		
+	
+	--start game mode	
 	elseif(menu == 2) then
 		for _p in all(partc) do
 			if (_p.tp == 3) del(partc, _p)
@@ -231,6 +241,7 @@ function _update60()
 		
 			if (ng_wait > 8) menu = 0
 		end
+	--leaderboard
 	elseif (menu == 3) then
 		animate_btn()
 		if (btn(5)) then
@@ -429,8 +440,6 @@ function _draw()
 		
 		draw_menu()
 		drawparts()
-		
---		print("d: "..debug, 2, 120, 7)
 				
 	elseif (menu == 2) then
 		cls()
@@ -461,8 +470,6 @@ function _draw()
 		drawparts()
 		
 		draw_spellcard()
-		
---		print("d: "..debug, 2, 120, 7)
 	
 		if (gameover == true) then 		
 			
@@ -484,10 +491,11 @@ function draw_topbar()
 	
 	print('spell card', 52, 2, 7)
 	draw_spell_bar()
-	--print('youkai:'..youkai, 86, 2, 7)
 end
 
 function draw_menu()
+	print('thanks zun!', 2, 2, ch_clr)
+
 	spr(64, 48, 28)
 	spr(65, 56, 28)
 	spr(80, 48, 36)
@@ -534,6 +542,8 @@ function draw_dialog()
 	
 	print('"youkai night" is coming...', 3, 62, 7)
 	print ('i need to be ready!', 3, 74, 7)
+
+	print('thanks zun!', 2, 2, ch_clr)
 
 	spr(menu_x_spr, 60, 84)
 	
@@ -739,19 +749,13 @@ end
 
 
 
-
-
-
-
-
-
 --visual effects!
 
 function addpartc(_x, _y, _dx, _dy, _type, _maxage)
 	local _p = {}
 	
-	_p.x = _x+4
-	_p.y = _y+4
+	_p.x = _x+1
+	_p.y = _y+1
 	
 	_p.dx = _dx
 	_p.dy = _dy
@@ -997,6 +1001,7 @@ function use_spellcard()
 	end
 end
 
+
 function add_ball_cast()
 	local addbl = {}
 	addbl.x = xb
@@ -1100,13 +1105,15 @@ function rm_draw()
 end
 
 
+
 --collisions
 
-function hit_ballbox(xb,yb,tx,ty,tw,th)
-	if xb+br < tx then return false end
-	if yb+br < ty then return false end
-	if xb-br > tx+tw then return false end
-	if yb-br > ty+th then return false end
+
+function hit_ballbox(bx,by,tx,ty,tw,th)
+	if bx+br < tx then return false end
+	if by+br < ty then return false end
+	if bx-br > tx+tw then return false end
+	if by-br > ty+th then return false end
 	return true
    end
    
@@ -1127,7 +1134,7 @@ function hit_ballbox(xb,yb,tx,ty,tw,th)
 	 -- check variants
 	 if slp > 0 and bdx > 0 then
 	  -- moving down right
-	  debug1="q1"
+	  position="q1"
 	  cx = tx-bx
 	  cy = ty-by
 	  if cx<=0 then
@@ -1138,7 +1145,7 @@ function hit_ballbox(xb,yb,tx,ty,tw,th)
 	   return false
 	  end
 	 elseif slp < 0 and bdx > 0 then
-	  debug1="q2"
+	  position="q2"
 	  -- moving up right
 	  cx = tx-bx
 	  cy = ty+th-by
@@ -1150,7 +1157,7 @@ function hit_ballbox(xb,yb,tx,ty,tw,th)
 	   return true
 	  end
 	 elseif slp > 0 and bdx < 0 then
-	  debug1="q3"
+	  position="q3"
 	  -- moving left up
 	  cx = tx+tw-bx
 	  cy = ty+th-by
@@ -1163,7 +1170,7 @@ function hit_ballbox(xb,yb,tx,ty,tw,th)
 	  end
 	 else
 	  -- moving left down
-	  debug1="q4"
+	  position="q4"
 	  cx = tx+tw-bx
 	  cy = ty-by
 	  if cx>=0 then
@@ -1210,9 +1217,9 @@ end
 function def_lb()
 	--default leaderboard
 	hs={1000, 600, 400, 200, 100}
-	hs1={26,26,26,26,26}
-	hs2={21,21,21,21,21}
-	hs3={14,14,14,14,14}
+	hs1={26,13,4,18,19}
+	hs2={21,1,5,15,21}
+	hs3={14,8,14,13,19}
 	savehs()
 end
 
